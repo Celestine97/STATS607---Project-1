@@ -1,0 +1,103 @@
+\newcommand{\reals}{\mathbb{R}}
+\newcommand{\integers}{\mathbb{Z}}
+\newcommand{\naturals}{\mathbb{N}}
+\newcommand{\rationals}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\bbp}{\mathbb{P}}
+\newcommand{\LL}{\mathbb{L}}
+\newcommand{\EE}{\mathbb{E}}
+\newcommand{\VV}{\mathbb{V}}
+\newcommand{\CC}{\mathbb{C}}
+\newcommand{\PP}{\mathbb{P}}
+
+\renewcommand{\>}{\rangle}
+\newcommand{\<}{\langle}
+
+\newcommand{\III}[1]{{\left\vert\kern-0.25ex\left\vert\kern-0.25ex\left\vert #1 
+    \right\vert\kern-0.25ex\right\vert\kern-0.25ex\right\vert}}
+
+\newcommand{\simiid}{\stackrel{\text{iid}}{\sim}}
+\newcommand{\prox}{\texttt{prox}}
+
+% Caligraphic alphabet
+\newcommand{\calr}{\mathcal{R}} % only because \cr already taken
+\newcommand{\ca}{\mathcal{A}} \newcommand{\cb}{\mathcal{B}} \newcommand{\cc}{\mathcal{C}} \newcommand{\cd}{\mathcal{D}} \newcommand{\ce}{\mathcal{E}} \newcommand{\cf}{\mathcal{F}} \newcommand{\cg}{\mathcal{G}} \newcommand{\ch}{\mathcal{H}} \newcommand{\ci}{\mathcal{I}} \newcommand{\cj}{\mathcal{J}} \newcommand{\ck}{\mathcal{K}} \newcommand{\cl}{\mathcal{L}} \newcommand{\cm}{\mathcal{M}} \newcommand{\cn}{\mathcal{N}} \newcommand{\co}{\mathcal{O}} \newcommand{\cp}{\mathcal{P}} \newcommand{\cq}{\mathcal{Q}} \newcommand{\cs}{\mathcal{S}} \newcommand{\ct}{\mathcal{T}} \newcommand{\cu}{\mathcal{U}} \newcommand{\cv}{\mathcal{V}} \newcommand{\cw}{\mathcal{W}} \newcommand{\cx}{\mathcal{X}} \newcommand{\cy}{\mathcal{Y}} \newcommand{\cz}{\mathcal{Z}}
+
+\newcommand{\ind}[1]{1_{#1}} % Indicator function
+%\newcommand{\pr}{\mathbb P} % Generic probability, changed to bbp
+\providecommand*{\pr}[1][]{\mathbb P\left(#1\right)}
+\providecommand*{\E}[1][]{\mathbb E\left[#1\right]}
+\newcommand{\var}{\textrm{Var}}
+\newcommand{\cov}{\textrm{Cov}}
+\newcommand{\sgn}{\textrm{sgn}}
+\newcommand{\sign}{\textrm{sign}}
+\newcommand{\kl}{\textrm{KL}} 
+\newcommand{\T}{\mathsf T} 
+
+\newcommand{\law}{\mathcal{L}}  % \law{X}, the measure associated with r.v. X
+\newcommand{\normal}{N} % for normal distribution (can probably skip this)
+\newcommand{\eps}{\varepsilon}
+
+% Convergence
+\newcommand{\convd}{\stackrel{d}{\longrightarrow}} % convergence in distribution/law/measure
+\newcommand{\convp}{\stackrel{P}{\longrightarrow}} % convergence in probability
+\newcommand{\convas}{\stackrel{\textrm{a.s.}}{\longrightarrow}} % convergence almost surely
+
+\newcommand{\eqd}{\stackrel{d}{=}} % equal in distribution/law/measure
+\newcommand{\argmax}{\textrm{argmax}}
+\newcommand{\argmin}{\textrm{argmin}}
+\newcommand{\conv}{\textrm{conv}} % for denoting the convex hull
+
+% Theorem-like declarations
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+%\newtheorem{prop}{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+
+\theoremstyle{definition}
+%\newtheorem{defn}[theorem]{Def}
+%\newtheorem{prop}[theorem]{Prop}
+\newcommand{\ex}{\noindent {\bf Example.}}
+\newcommand{\prop}{\noindent {\bf Prop.}}
+\newcommand{\defn}{\noindent {\bf Def.}}
+\newcommand{\thm}{\noindent {\bf Thm.}}
+\newcommand{\lem}{\noindent {\bf Lem.}}
+\newcommand{\rmk}{\noindent {\bf Rmk.}}
+\newcommand{\cor}{\noindent {\bf Cor.}}
+\newcommand{\example}[1]{\noindent {\bf Example #1.}}
+\newcommand{\exercise}[1]{\noindent {\bf Exercise #1.} }
+
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\makeatletter
+\providecommand*{\diff}%
+	{\@ifnextchar^{\DIfF}{\DIfF^{}}}
+\def\DIfF^#1{%
+	\mathop{\mathrm{\mathstrut d}}%
+		\nolimits^{#1}\gobblespace}
+\def\gobblespace{%
+	\futurelet\diffarg\opspace}
+\def\opspace{%
+	\let\DiffSpace\!%
+	\ifx\diffarg(%
+		\let\DiffSpace\relax
+	\else
+		\ifx\diffarg[%
+			\let\DiffSpace\relax
+	\else
+		\ifx\diffarg\{%
+			\let\DiffSpace\relax
+		\fi\fi\fi\DiffSpace}
+
+
+\providecommand*{\deriv}[3][]{\frac{\diff^{#1}#2}{\diff #3^{#1}}}
+\providecommand*{\pderiv}[3][]{\frac{\partial^{#1}#2}{\partial #3^{#1}}}
+		
+\newcommand{\threequals}{\equiv}

@@ -1,0 +1,27 @@
+\documentclass[main]{subfiles}
+
+\begin{document}
+\subsection{Motivation: fMRI data}
+\label{sec-data}
+
+We examine fMRI data from Kay et al (2008).  In their experiments, a subject is presented with an image, and
+fMRI signals in the primary visual cortex (V1) are measured. Our focus will be restricted to voxels 1-20, and we wish to predict
+the responses of these twenty voxels to each image. Features from each image were extracted using a Gabor wavelet pyramid,
+resulting in $p = 10921$ features for each image, and there were a total of $n = 1705$ images.
+
+Neurons in this region have a localized receptive field,
+and cortical columns in V1 have been well modeled using Gabor transformations. Hence it is
+reasonable to assume the fMRI response in a certain voxel is (roughly) a linear function of a small
+number of Gabor transforms of the image.
+
+Therefore, we chose to fit a LASSO model to predict voxel responses for this particular application.
+Furthermore, we investigate whether or not choosing a pre-factor $K$ can improve
+our LASSO predictions. In section \ref{sec-single_repsonse} we fit independent LASSOs to each voxel, and investigate the benefits of
+additionally choosing $K$.
+
+However, we also have knowledge that adjacent voxels are likely to be strongly correlated, so instead of fitting 20 independent
+prediction models, we would like to take advantage of these correlations to improve predictive accuracy.
+We explore ways to extend the curds-and-whey
+method proposed by Breiman \& Friedman (1997) to this high-dimensional, sparse case.
+
+\end{document}

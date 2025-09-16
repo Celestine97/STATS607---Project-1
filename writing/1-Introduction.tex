@@ -1,0 +1,57 @@
+\documentclass[main]{subfiles}
+
+\begin{document}
+\section{Background}
+
+\subsection{Predictive Shrinkage}
+\label{sec-background}
+
+Suppose we are given an $n\times p$ centered data matrix $X$ and an $n\times 1$ vector of responses $Y$---the pair $(X,Y)$ constitutes the training data. Assume the linear model $Y_i = \alpha + (\beta^*)^\mathsf{T}X_i + \eps_i$, where  $\eps_i \simiid \mathcal{N}(0, \sigma^2).$ Define the ordinary least squares (OLS) estimate
+\begin{align}
+&(\widehat\alpha,\widehat\beta) := \arg\min_{\alpha,\beta}\bigg\{\|Y - {\bf1}\alpha-X\beta\|_2^2\bigg\}, \\
+&\text{ given by }
+\widehat\alpha = \overline{Y} = \frac{1}{n}\sum_{i=1}^n Y_i
+\text{ and }
+\widehat\beta = \left(X^\mathsf{T}X\right)^{-1}X^\mathsf{T}(Y-\overline{Y}{\bf 1}).
+\end{align}
+If we have test data $x\sim (0, \Sigma)$ and $y = \alpha + x^\T \beta^* + \eps$, the OLS prediction is $\widehat{y} = \widehat{\alpha} +\widehat\beta^\mathsf{T}x$. The bias-variance decomposition of prediction mean square error (PMSE) is
+\begin{align}
+\label{eq-bias-variance}
+\EE\left[ (y - \widehat{y})^2\right]
+%&= \EE\left[ (\alpha + x^\T \beta - \widehat{y} + \eps)^2\right] \\
+%&= \sigma^2 + \EE\left[ (\alpha + x^\T \beta - \widehat{y})^2\right] \\
+%&= \sigma^2 + \EE\left[ (\alpha - \widehat{\alpha} + x^\T (\beta  -\widehat\beta))^2\right] \\
+%&= \sigma^2 + \text{Var}\left[\widehat{\alpha}\right] + \EE\left[ (x^\T (\beta  -\widehat\beta))^2\right] \\
+&= \left(1+\frac{1}{n}\right)\sigma^2 + \EE\left[ (\beta^*  -\widehat\beta)^\T \Sigma (\beta^*  -\widehat\beta)\right]  \\
+%&= \left(1+\frac{1}{n}\right)\sigma^2 + \text{tr}\left(  \Sigma\, \text{Cov}\left[\widehat\beta\right]\right) \\
+%&= \left(1+\frac{1}{n} + \frac{1}{n}\text{tr}\left(  \mathbb{E}\left[\Sigma\, S^{-1}\right]\right)\right)\sigma^2,\\
+&= \left(1+\frac{p+1}{n} + \frac{1}{n}\text{tr}\left(  \mathbb{E}\left[(\Sigma-S)\, S^{-1}\right]\right)\right)\sigma^2,
+\end{align}
+where $S = n^{-1}X^\mathsf{T}X$. If the design of the training set is fixed (so $S$ is constant) and we assume the test set follows the distribution of the training set in the sense that $\Sigma = S$, then the last term vanishes and so the PMSE is $\left(1+\frac{1}{n} + \frac{p}{n}\right)\sigma^2$. Alternatively, if the rows $X_i$ of $X$ are all i.i.d. $\cn(0, \Sigma)$, then $nS$ is a Wishart matrix, and so $\EE\left[(nS)^{-1}\right] = \frac{\Sigma^{-1}}{\nu}$ where $\nu = n-p-1$, yielding a larger overall PMSE of $\left(1+\frac{1}{n} + \frac{p}{\nu}\right)\sigma^2$. \smallskip
+
+Under the first set of assumptions, where $\Sigma = S$ exactly, we can write the last term in equation \eqref{eq-bias-variance} as $\EE\left[ (\beta^*  -\widehat\beta)^\T \Sigma (\beta^*  -\widehat\beta)\right] = \EE\left[\|\widehat\xi-\xi\|_2^2\right]$, where $\widehat\xi = \Sigma^{1/2}\widehat\beta\sim \cn(\xi^*, (\sigma^2/n)I_p)$ and $\xi^* = \Sigma^{1/2}\beta^*$. This is a normal-means estimation problem, so when $p > 2$ we can achieve lower MSE $\EE\left[\|\widetilde\xi-\xi^*\|_2^2\right] < \EE\left[\|\widehat\xi-\xi^*\|_2^2\right]$ with the James-Stein estimate
+\begin{align}
+\label{eq-james-stein}
+\widetilde\xi &= \left(1-\frac{(p-2)(\widehat\sigma^2/n)\nu}{(\nu+2)\|\widehat\xi\|_2^2}\right)\widehat\xi,
+\end{align}
+yielding the shrunk regression coefficients $\widetilde\beta = \widehat{K}\widehat\beta$, where $\widehat{K} = \left(1-\frac{(p-2)(\widehat\sigma^2/n)\nu}{(\nu+2)\widehat\beta^\T S\widehat\beta}\right)$. It follows that $\widetilde{y} = \widehat\alpha + \widehat{K}\widehat\beta$ has strictly better PMSE than OLS $\widehat{y}$. Since $\widehat{K} < 1$ we are left to conclude that the OLS predictions on held-out data were too large in magnitude. Pre-shrunk predictors of this form were first studied by Copas (1983), who also provided the Stein-shrinkage interpretation. \smallskip
+
+Another form of shrinkage is {\sl ridge regression}
+\begin{align}
+\label{eq-ridge-regression}
+&(\widehat\alpha,\widehat\beta(\lambda)) := \arg\min_{\alpha,\beta}\bigg\{\|Y - {\bf1}\alpha-X\beta\|_2^2 + \lambda\|\beta\|_2^2\bigg\},  \\
+&\text{ given by }
+\widehat\alpha = \overline{Y} = \frac{1}{n}\sum_{i=1}^n Y_i
+\text{ and }
+\widehat\beta(\lambda) = \left(X^\mathsf{T}X + \lambda I_p\right)^{-1}X^\mathsf{T}(Y-\overline{Y}{\bf 1}).
+\end{align}
+In particular, $\widehat\beta(0) = \widehat\beta$ is OLS and $\lim_{\lambda\uparrow\infty}\widehat\beta(\lambda) = 0$. Note $\widehat\beta(\lambda) = \left(X^\mathsf{T}X + \lambda I_p\right)^{-1}(X^\T X)\widehat\beta$ shrinks $\widehat\beta$ towards zero in a manner that accounts for the variability in the covariates $X$.  For $\lambda > 0$ it is not the case that $\widehat\beta(\lambda) = K\widehat\beta$ for some $K$, which is to say the family of estimators $\widetilde\beta(K, \lambda) = K \widehat\beta(\lambda)$ is not overparametrized. We allow any $K > 0$, since for $\lambda$ large, $\widehat\beta(\lambda)$ tends to overshrink. The estimator minimizes the following loss functions:
+\begin{align}
+\widetilde\beta(K, \lambda) &:= \arg\min_{\beta}\bigg\{\|K(Y - {\bf1}\overline{Y})-X\beta\|_2^2 + \lambda\|\beta\|_2^2\bigg\} \\
+&= \arg\min_{\beta}\bigg\{\|Y - {\bf1}\overline{Y}-X\beta\|_2^2 + \frac{\lambda}{K}\|\beta\|_2^2 + (K^{-1}-1)\|X\beta\|_2^2\bigg\}.
+\end{align}
+The first minimization performs ridge regression on the centered design $X$ and shrunk (or inflated) centered responses $K(Y - {\bf1}\overline{Y})$. The second is like ridge with an additional penalty. If $K < 1$ then $(K^{-1}-1)\|X\beta\|_2^2$ penalizes large $X\beta$, and if $K > 1$ it penalizes small $X\beta$.\smallskip
+
+When $\lambda > 0$, the ridge regression estimate $\widehat\beta(\lambda)$ is biased, but has the advantage of being well-defined even in the high dimensional case $n < p$. Whether we can benefit from the additional pre-factor $K$ depends on how reliably we can detect whether we need to inflate or shrink. In the case where $\beta^*$ is known to be sparse, we can ask the same set of questions about the magnitude of our predictions after LASSO, where the regularization term in \eqref{eq-ridge-regression} is replaced with $\lambda\|\beta\|_1$. We start with simulation studies to get a sense of in what cases we can significantly improve predictions by including $K$.
+
+\end{document}

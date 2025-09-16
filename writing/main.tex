@@ -1,0 +1,85 @@
+\documentclass[a4paper]{article}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+%% Sets page size and margins
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath, amsfonts, amsthm, amssymb}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{accents}
+
+\usepackage{subfiles}
+\newcommand{\onlyinsubfile}[1]{#1}   % Magic to deal with compiling subfiles
+
+\usepackage{subcaption}
+
+\input{stat-macros}
+
+\setlength{\parskip}{\smallskipamount}
+%\setlength{\parindent}{0pt}
+
+\renewcommand{\qedsymbol}{$\spadesuit$} % this makes the QED symbol look like a spade
+
+\newcommand{\vertiii}[1]{{\left\vert\kern-0.25ex\left\vert\kern-0.25ex\left\vert #1 \right\vert\kern-0.25ex\right\vert\kern-0.25ex\right\vert}}
+
+\newenvironment{hanglist}[1][\parindent]{%
+    \begin{list}{}{%
+        \setlength{\leftmargin}{#1}
+        \setlength{\labelwidth}{0pt}
+        \setlength{\labelsep}{0pt}
+        \setlength{\itemindent}{-#1}}
+    }{%
+        \end{list}
+    }
+
+
+
+% ----------------------------------------------------------------
+
+\title{Predictive Shrinkage in High Dimensional Regression}
+\author{Runjing Liu \& Jake A. Soloff}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent In ordinary least squares (OLS), the magnitude of predictions on average are too large for test data,
+and Stein shrinkage can improve prediction mean squared error.
+We study the relationship between regularized least squares and predictive shrinkage to understand how the
+latter might be beneficial in high-dimensional data analysis.
+We then study predicting multiple correlated responses from a large number of explanatory variables.
+\end{abstract}
+
+\tableofcontents
+
+\newpage
+
+\subfile{1-Introduction.tex}
+
+\subfile{1a-Data.tex}
+
+\subfile{2-single-response.tex}
+
+\newpage
+ 
+\subfile{3-multi-response.tex}
+
+\newpage
+
+\subfile{4-conclusion.tex}
+
+
+
+\newpage
+
+\bibliographystyle{alpha}
+\bibliography{citations}
+
+\end{document}

@@ -1,0 +1,7 @@
+To Do (first steps)
+
+(J) — Discuss relationship between Copas shrinkage and regularization. It’s clear that Copas applies Stein shrinkage to estimate ß*; is there some sense in which ridge regression is Stein shrinkage? Copas is basically scaling ß and Ridge is basically preconditioning X’X, and each has a clean theory way of optimally shrinking. But what if I want to do both (i.e. is there an ‘optimal’ way in terms of PMSE to select (λ, K) jointly)? Can we validate this with simulations or (even better) a B-V decomposition?
+(B) — Run a simulation study similar to final homework, but where ß* is sparse and estimated via Lasso (use CV to select scaling K). We also want to demonstrate the problem, maybe by comparing the slope of predicted to actual on the full Lasso path (i.e. plot slope vs λ along with various typical choices of λ).
+(J, B) — Identify existing work on the problem of scaling predictions in sparse linear regression.
+— Do this also in the context of logistic regression with L1 penalization. 
+— Run CCA on the fMRI data just to see what comes out.

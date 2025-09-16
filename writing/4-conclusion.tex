@@ -1,0 +1,36 @@
+\documentclass[main]{subfiles}
+
+\begin{document}
+\section{Conclusion}
+
+In the single-response high-dimensional regression case, we explored ways to do
+shrinkage inspired by Copas (1983) in the context of LASSO and ridge regression.
+Like Copas, the aim was to choose a pre-factor $K$ that either shrinks or inflates our predictions.
+We apply this idea to the high dimensional case,
+where the formula given by Copas to choose $K$ does not apply. One method we tried was to
+use cross validation to jointly choose a regularization parameter $\lambda$
+and a pre-factor $K$. On the fMRI data, this seemed to help inflate our LASSO
+predictions, which were often too small. However, in the end this approach had
+negligible improvement in terms of MSPE.
+While we argued that this additional parameter cannot hurt {\sl in theory},
+we believe the added parameter is an unnecessary degree of freedom after the
+shrinkage provided by $\lambda$.
+
+In the multi-response high-dimensional regression case, we provided a Stein-shrinkage interpretation of the curds \& whey method, and found through simulations that curds \& whey with cross validation works well in moderate dimensions, but noted that CCA is not well defined when $p > n$. We explored possible extensions of curds \& whey to the high dimensional case, and found that the high dimensional precision estimate always outperformed LASSO, although it relied on distributional assumptions for the covariates. By contrast, directly estimating the best linear predictor $B^*$ via CV tended to improve predictions relative to LASSO and does not rely on distributional assumptions. In the fMRI application, the BLP-CV method  allowed us to share strength across voxels, as indicated in Figure \ref{fig-cor}.
+
+
+
+\vfill
+
+\section{References}
+
+\begin{hanglist}[.5cm]
+\item Efron, B., \& Morris, C. (1972). Empirical Bayes on vector observations: An extension of Stein's method. {\sl Biometrika}, 59(2):335--347.
+\item Copas, J. B. (1983). Regression, prediction and shrinkage. {\sl Journal of the Royal Statistical Society}, 311--354.
+\item Breiman, L., \& Friedman, J. H. (1997) Predicting multivariate responses in multiple linear regression. {\sl Journal of the Royal Statistical Society}, 59(1):3--54.
+\item Obozinski, G., Taskar, B., \& Jordan, M. I. (2006) Multi-task feature selection. Technical report, {\sl Department of Statistics, University of California, Berkeley.}
+\item Kay, K., Naselaris, T., Prenger, R. J., \& Gallant, J. (2008) Identifying natural images from human brain activity. {\sl Nature}, 452(7185):352--355.
+\item Witten, D. M., Tibshirani, R., \& Hastie, T. (2009). A penalized matrix decomposition, with applications to sparse principal components and canonical correlation analysis. {\sl Biostatistics}, 10(3):515--534.
+\end{hanglist}
+
+\end{document}
