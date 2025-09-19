@@ -4,10 +4,14 @@ library(MASS)
 library(Matrix)
 library(expm)
 library(quadprog)
+library(glmnet)
+library(corrplot)
+library(PMA)
 
-## generate multi-response linear model (x, y)  
+
+## generate multi-response sparse linear model (x, y)  
 ## following the Design section of Breiman-Friedman (1997)
-generate_data <- function(p, q, N, SNR, rho, Sigma = 'eye'){
+generate_sparse_data <- function(p, q, N, SNR, rho, s, Sigma = 'eye'){
   # generate covariates x from 
   # AR(1) Gaussian graphical model
   r <- 2*runif(1) - 1
@@ -17,15 +21,17 @@ generate_data <- function(p, q, N, SNR, rho, Sigma = 'eye'){
   # generate true coefficients A
   K <- 10
   C <- mvrnorm(K, (1:q)*0, rho**abs(outer(1:q, 1:q, "-"))) 
-  j <- sample(seq(p), K, replace = TRUE)
+  j <- sample(seq(s), K, replace = TRUE)
   l <- sample(seq(6), K, replace = TRUE)
-  G <- pmax(Matrix(rep(l, p), nrow = p, byrow = TRUE) - abs(outer(1:p, j, "-")), 0)^2
-  G <- G / Matrix(rep(colSums(G), p), nrow = p, byrow = TRUE)
+  G <- pmax(Matrix(rep(l, s), nrow = s, byrow = TRUE) - abs(outer(1:s, j, "-")), 0)^2
+  G <- G / Matrix(rep(colSums(G), s), nrow = s, byrow = TRUE)
   A <- G %*% C
+  zeros <- Matrix(rep(0, (p-s)*q), ncol = q)
+  A <- abs(rbind(A, zeros))
   # "all coefficient values were normalized by the same scale factor so that 
   # the average ('signal') variance for each response was equal to 1.0"
   signal <- diag(t(A) %*% V %*% A)
-  A <- (A / sqrt(mean(signal))) %>% t
+  A <- (A / sqrt(mean(signal))) %>% t 
   
   # generate responses y = Ax + eps
   sigma2 = 1/SNR
@@ -39,53 +45,73 @@ generate_data <- function(p, q, N, SNR, rho, Sigma = 'eye'){
   list(x = x, A = A, V = V, y = y)
 }
 
-## Run OLS separately on each problem
-ols_separate <- function(x, y){
+## Run LASSO separately on each problem
+lasso_separate <- function(x, y, lambda = NULL){
   q <- dim(y)[2]
-  sapply(1:q, function(i){
-    as.vector(lm(y[, i] ~ x + 0)$coefficients)}) %>% t
+  out <- lapply(1:q, function(k){
+    fit <- cv.glmnet(x, y[, k], intercept = FALSE, nfolds = 5, lambda = lambda)
+    beta <- coef(fit, s = "lambda.min")
+    list(beta = beta[2:nrow(beta)],
+         lambdas = fit$lambda)}) 
+  A_lasso <- sapply(1:q, function(k){out[[k]]$beta}) %>% t
+  lambdas <- lapply(1:q, function(k){out[[k]]$lambdas})
+  A_lasso
 }
 
-## Shrink multi-response predictions according to model-
-## based closed form: "does not provide enough shrinkage"
-curds_n_whey <- function(x, y, A_ols){
-  can_cor <- cancor(x, y)
-  T_ <- can_cor$ycoef
-  C2 <- (can_cor$cor)^2
-  r <- dim(x)[2] / dim(x)[1]
-  D_ <- diag(C2 / (C2 + r*(1-C2)))
-  B <- solve(T_) %*% D_ %*% T_
-  q <- dim(y)[2]
+## Estimate union of support based on LASSO 
+## then run Curds & Whey on support
+support_cw <- function(x, y, A_lasso){
+  N <- dim(x)[1]  # define N
+  p <- dim(x)[2]  # define p
+  q <- dim(y)[2]  # define q
   
-  B %*% A_ols
+  # how many coefficients are non-zero at least k out of q
+  votes <- sapply(0:q, function(k){
+    length(which(colSums(A_lasso != 0) > k))
+  })
+  # do any of the votes satisfy the two constraints for C&W?
+  valid_cutoffs <- (which((q+1 < votes) & (votes < N)) - 1)
+  # if not, take all possible
+  if(length(valid_cutoffs) == 0){
+    support_est <- which(colSums(A_lasso != 0) > 0) 
+    if(length(support_est) < q + 2){
+      support_est <- c(support_est, sample((1:p)[-support_est], q+2-length(support_est)))
+    } else{
+      support_est <- sample(support_est, q+2)
+    }
+  } else {
+    cutoff <- median(valid_cutoffs) # super arbitrary
+    support_est <- which(colSums(A_lasso != 0) > cutoff) 
+  }
+  
+  A_cw <- curds_n_whey_gcv(x[, support_est], y, A_lasso[, support_est])
+  A_est <- matrix(1:(p*q), nrow=q)*0
+  A_est[, support_est] <- A_cw
+  A_est
 }
+
 
 ## Shrink multi-response predictions according to  
 ## "generalized CV" - selecting diagonal matrix w/ CV
-curds_n_whey_gcv <- function(x, y, A_ols, nfolds = 5){
+sparse_cw_gcv <- function(x, y, A_lasso, nfolds = 5){
   N <- dim(y)[1] 
   q <- dim(y)[2]
   p <- dim(x)[2]
   fold <- sort(rep(1:nfolds, ceiling(N/nfolds)))[1:N]
   
-  y_hat_ols_cv <- Reduce(rbind,
-                         lapply(1:nfolds, function(hold){
-                           train_x <- x[fold != hold, ]
-                           train_y <- y[fold != hold, ]
-                           valid_x <- x[fold == hold, ]
-                           A_ols_cv <- ols_separate(train_x, train_y)
-                           valid_x %*% t(A_ols_cv)
-                         }), NULL)
+  y_hat_lasso <- x %*% t(A_lasso)
   
   T_cv <- lapply(1:nfolds, function(hold){
     train_x <- x[fold != hold, ]
     train_y <- y[fold != hold, ]
-    cancor(train_x, train_y)$ycoef
+    train_y_s <- scale(train_y)
+    # sqrtm(solve(t(train_y_s) %*% train_y_s)) %*% CCA(train_x, train_y, K = q, penaltyz = 1, trace = FALSE)$v
+    sqrtm(solve(t(train_y_s) %*% train_y_s)) %*% cancor(train_x, train_y_s)$ycoef
   })
   
   T_inv_cv <- Map(solve, T_cv)
   R_cv <- sapply(1:N, function(n){
-    T_cv[[fold[n]]] %*% y_hat_ols_cv[n, ]
+    T_cv[[fold[n]]] %*% y_hat_lasso[n, ]
   })
   
   dvec <- sapply(1:N, function(n){
@@ -99,54 +125,119 @@ curds_n_whey_gcv <- function(x, y, A_ols, nfolds = 5){
   
   D_ <- diag(pmax(solve(Dmat) %*% dvec, 0) %>% as.vector())
   
-  can_cor <- cancor(x, y)
-  T_ <- can_cor$ycoef
+  y_s <- scale(y)
+  # T_ <- sqrtm(solve(t(y_s) %*% y_s)) %*% CCA(x, y, K = q, penaltyz = 1, trace = FALSE)$v
+  T_ <- sqrtm(solve(t(y_s) %*% y_s)) %*% cancor(x, y_s)$ycoef
   B <- solve(T_) %*% D_ %*% T_
   
-  B %*% A_ols
+  B %*% A_lasso
+}
+
+## Estimate the best linear predictor via cv
+BLP_CV <- function(x, y, A_lasso, nfolds = 5){
+  N <- dim(y)[1] 
+  q <- dim(y)[2]
+  p <- dim(x)[2]
+  fold <- sort(rep(1:nfolds, ceiling(N/nfolds)))[1:N]
+  
+  Bs <- lapply(1:nfolds, function(hold){
+    train_x <- x[fold != hold, ]
+    train_y <- y[fold != hold, ]
+    valid_x <- x[fold == hold, ]
+    valid_y <- y[fold == hold, ]
+    ## fit LASSO on train, predict on validate
+    valid_y_hat <- valid_x %*% t(lasso_separate(train_x, train_y))
+    
+    ## fit OLS to fitted values, store weights
+    sapply(1:q, function(k){
+      as.vector(coef(lm(valid_y[, k] ~ valid_y_hat + 0)))
+    }) %>% t
+  })
+  ## average coefficients across folds
+  B <- Reduce('+', Bs) / nfolds
+  B %*% A_lasso
+}
+
+## estimate autocorrelation
+autocor <- function(x){
+  p <- dim(x)[1]
+  mean(sapply(1:(p-1), function(j){cor(x[, j], x[, j+1])}))}
+
+## tridiagonal matrix - from stackoverflow.com/questions/28974507
+tridiag <- function(upper, lower, main){
+  out <- matrix(0,length(main),length(main))
+  diag(out) <- main
+  indx <- seq.int(length(upper))
+  out[cbind(indx+1,indx)] <- lower
+  out[cbind(indx,indx+1)] <- upper
+  return(out)
+}
+
+## estimate inverse covariance of covariates
+## with knowledge of AR(1) structure
+precision_est <- function(x, y, A_lasso){
+  p <- dim(x)[2]
+  n <- dim(x)[1]
+  r_est <- autocor(x)
+  
+  # closed form precision estimate
+  off_diag <- -r_est / (1 - r_est^2)
+  on_diag <- c(1+r_est^2, rep(1+(1-r_est)^2, p-2), 1+r_est^2)
+  prec_xx <- tridiag(rep(off_diag, (p-1)), rep(off_diag, (p-1)), on_diag)
+  
+  x_s <- scale(x, scale = FALSE)
+  y_s <- scale(y, scale = FALSE)
+  cov_xy <- t(x_s) %*% y_s
+  prec_yy <- solve(t(y_s) %*% y_s)
+  Q <- prec_yy %*% t(cov_xy) %*% prec_xx %*% cov_xy
+  r <- (sum(A_lasso != 0) *log(p) / q) / n
+  B <- solve((1-r)*diag(rep(1, q)) + r*t(solve(Q)))
+  B %*% A_lasso
 }
 
 ## Generate data, estimate coefficients, and calculate
 ## metrics used by Breiman & Friedman (1997)
-sim <- function(p, q, N, SNR, rho){
-  data <- generate_data(p, q, N, SNR, rho) 
+sim <- function(p, q, N, SNR, rho, s){
+  data <- generate_sparse_data(p, q, N, SNR, rho, s) 
   A <- data$A
   V <- data$V
   x <- data$x
   y <- data$y
   
-  A_ols <- ols_separate(x, y)
-  A_cw <- curds_n_whey(x, y, A_ols)
-  A_cw_cv <- curds_n_whey_gcv(x, y, A_ols)
+  A_lasso <- lasso_separate(x, y)
+  A_cw <- sparse_cw_gcv(x, y, A_lasso)
+  A_sup <- support_cw(x, y, A_lasso)
+  A_prec <- precision_est(x, y, A_lasso)
+  A_blpcv <- BLP_CV(x, y, A_lasso)
   
-  S <- (1/N) * t(x) %*% x
-  sigma_hat_sq <- sum((y - x %*% t(A_ols))**2) / ((N-p)*q)
-  nu <- N - p - 1
-  D_copas <- diag(1 - ((p-2) * (sigma_hat_sq / N) * nu) / 
-                    ((nu+2) * diag(A_ols %*% S %*% t(A_ols))))
-  A_copas <- D_copas %*% A_ols
+  MSE_lasso <- diag((A - A_lasso) %*% V %*% t(A - A_lasso))
+  MSE_cw <- diag((A - A_cw) %*% V %*% t(A - A_cw))
+  MSE_sup <- diag((A - A_sup) %*% V %*% t(A - A_sup))
+  MSE_prec <- diag((A - A_prec) %*% V %*% t(A - A_prec))
+  MSE_blpcv <- diag((A - A_blpcv) %*% V %*% t(A - A_blpcv))
   
-  MSE_ols <- diag((A - A_ols) %*% V %*% t(A - A_ols))
-  MSE_cw  <- diag((A - A_cw) %*% V %*% t(A - A_cw))
-  MSE_copas <- diag((A - A_copas) %*% V %*% t(A - A_copas))
-  MSE_cw_cv <- diag((A - A_cw_cv) %*% V %*% t(A - A_cw_cv))
+  cw <- data.frame(MSE_relative = c(sum(MSE_cw) / sum(MSE_lasso)), 
+                   MSE_individual = c(mean(MSE_cw / MSE_lasso)), 
+                   MSE_worst = c(max(MSE_cw / MSE_lasso)), 
+                   Method = c('C&W (Sparse CCA)'), 
+                   p = p, q = q, N = N, SNR = SNR, rho = rho, s = s)
   
-  cw <- data.frame(MSE_relative = c(sum(MSE_cw) / sum(MSE_ols)), 
-                   MSE_individual = c(mean(MSE_cw / MSE_ols)), 
-                   MSE_worst = c(max(MSE_cw / MSE_ols)), 
-                   Method = c('Curds & Whey (Closed Form)'), 
-                   p = p, q = q, N = N, SNR = SNR, rho = rho)
+  sup <- data.frame(MSE_relative = c(sum(MSE_sup) / sum(MSE_lasso)), 
+                    MSE_individual = c(mean(MSE_sup / MSE_lasso)), 
+                    MSE_worst = c(max(MSE_sup / MSE_lasso)), 
+                    Method = c('C&W (Subset Selection)'), 
+                    p = p, q = q, N = N, SNR = SNR, rho = rho, s = s)
   
-  copas <- data.frame(MSE_relative = c(sum(MSE_copas) / sum(MSE_ols)), 
-                      MSE_individual = c(mean(MSE_copas / MSE_ols)), 
-                      MSE_worst = c(max(MSE_copas / MSE_ols)), 
-                      Method = c('Separate Copas Shrinkage'), 
-                      p = p, q = q, N = N, SNR = SNR, rho = rho)
+  prec <- data.frame(MSE_relative = c(sum(MSE_prec) / sum(MSE_lasso)), 
+                     MSE_individual = c(mean(MSE_prec / MSE_lasso)), 
+                     MSE_worst = c(max(MSE_prec / MSE_lasso)), 
+                     Method = c('C&W (Precision Estimation)'), 
+                     p = p, q = q, N = N, SNR = SNR, rho = rho, s = s)
   
-  cw_cv <- data.frame(MSE_relative = c(sum(MSE_cw_cv) / sum(MSE_ols)), 
-                      MSE_individual = c(mean(MSE_cw_cv / MSE_ols)), 
-                      MSE_worst = c(max(MSE_cw_cv / MSE_ols)), 
-                      Method = c('Curds & Whey (GCV)'), 
-                      p = p, q = q, N = N, SNR = SNR, rho = rho)
-  rbind(cw, copas, cw_cv)
+  blpcv <- data.frame(MSE_relative = c(sum(MSE_blpcv) / sum(MSE_lasso)), 
+                      MSE_individual = c(mean(MSE_blpcv / MSE_lasso)), 
+                      MSE_worst = c(max(MSE_blpcv / MSE_lasso)), 
+                      Method = c('BLP - CV'), 
+                      p = p, q = q, N = N, SNR = SNR, rho = rho, s = s)
+  rbind(cw, sup, prec, blpcv)
 }

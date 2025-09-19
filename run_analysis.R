@@ -17,17 +17,17 @@ cat("Setting up parameters...\n")
 source('scripts/setup/get_lasso_fixed_params.R')
 source('scripts/setup/get_ridge_fixed_params.R')  # if it exists
 
-cat("Running single response simulations...\n")
-# Run a subset of simulations (not full cluster scale)
-source('scripts/run_simulations.R')
+# cat("Running single response simulations...\n")
+# # Run a subset of simulations (not full cluster scale)
+# source('scripts/run_simulations.R')
 
-cat("Running multi-response simulations...\n") 
-source('scripts/run_multi_response_sims.R')
+# cat("Running multi-response simulations...\n") 
+# source('scripts/run_multi_response_sims(curds).R')
 
 cat("Running sparse multi-response simulations...\n")
-source('scripts/run_sparse_sims.R')
+source('scripts/run_multi_response_sims(sparse_curds).R')
 
-cat("Running fMRI analysis...\n")
-source('scripts/run_fmri_analysis.R')
+# cat("Running fMRI analysis...\n")
+# source('scripts/run_fmri_analysis.R')
 
 cat("Analysis complete! Check results/ directory for outputs.\n")
