@@ -1,0 +1,30 @@
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Data files
+data/raw/*.csv
+data/raw/*.RData
+data/raw/*.rda
+*.mat
+
+# Results (generated files)
+results/figures/*.png
+results/figures/*.pdf
+results/tables/*.csv
+artifacts/**/*.rda
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
