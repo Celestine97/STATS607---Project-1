@@ -13,38 +13,47 @@ library(rlist)
 
 set.seed(45345345)
 
-args <- commandArgs(TRUE)
-sigma <- as.double(args[1]) # std of error terms; we will vary this
-s <- as.double(args[2]) # sparsity
-alpha <- as.double(args[3]) # 0 if ridge, 1 if lasso
-out_dir <- as.character(args[4])
+# Set default parameters for direct execution
+sigma <- 5        # noise level
+s <- 950         # sparsity 
+alpha <- 1       # 1 for LASSO, 0 for ridge
+out_dir <- "results/"
 
-print(sigma)
-print(s)
-print(alpha)
-print(out_dir)
+# args <- commandArgs(TRUE)
+# sigma <- as.double(args[1]) # std of error terms; we will vary this
+# s <- as.double(args[2]) # sparsity
+# alpha <- as.double(args[3]) # 0 if ridge, 1 if lasso
+# out_dir <- as.character(args[4])
+
+# print(sigma)
+# print(s)
+# print(alpha)
+# print(out_dir)
 
 ######################
 # fixed parameters: 
 ######################
 if(alpha == 0){
-  load('../simulation_results/fixed_params/ridge_fixed_params.RData')
+  load('results/simulation_results/fixed_params/ridge_fixed_params.RData')
   method <- 'ridge'
 }else if(alpha == 1){
-  load('../simulation_results/fixed_params/lasso_fixed_params.RData')
+  load('results/simulation_results/fixed_params/lasso_fixed_params.RData')
   method <- 'lasso'
 }else{
   stop('alpha should be equal to 1 or 0 (values in between 
        not implemented/tested yet)')
 }
 
+# n_trials <- 500 
+n_trials <- N_TRIALS
+
 # the range of shrinkage factors we will consider
-k_range <- seq(0.5, 1.5, by = 0.05)
+# k_range <- seq(0.5, 1.5, by = 0.05)
+k_range <- K_RANGE
 
 ######################
 # run simulations: 
-######################
-n_trials <- 500 
+# ######################
 
 # two rows, n_trials columns
 # first row stores the k's, second row stores the lambdas
@@ -86,7 +95,9 @@ for(i in 1:n_trials){
   }
   
   # choose only lambda
-  cv_fit <- cv.glmnet(data$x_cs, data$y_cs, alpha = alpha) 
+  # cv_fit <- cv.glmnet(data$x_cs, data$y_cs, alpha = alpha) 
+  # customize number of cv_folds
+  cv_fit <- cv.glmnet(data$x_cs, data$y_cs, alpha = alpha, nfolds = CV_FOLDS) 
   lambda_range <- cv_fit$lambda
   min_lambda <- cv_fit$lambda.min
   cv_lambdas[i] <- min_lambda 
@@ -102,8 +113,11 @@ for(i in 1:n_trials){
   lambda_only_mspe_vs[i] <- drop(get_mspe(lambda_only_vs_pred, data$y_vs))
   
   # choose joint lambda and k
+  # joint_results <- choose_joint_lambda_k(data$x_cs, data$y_cs, 
+  #                                        lambda_range, k_range)
   joint_results <- choose_joint_lambda_k(data$x_cs, data$y_cs, 
-                                         lambda_range, k_range)
+                                         lambda_range, k_range, 
+                                         alpha = alpha, nfolds = CV_FOLDS)
   # if our default range for k isn't good enough ... 
   if(joint_results$k == max(k_range)){
     print('expanding k_range ... ')
@@ -113,8 +127,11 @@ for(i in 1:n_trials){
   }else if(joint_results$k == min(k_range)){
     print('expanding k_range ... ')
     k_range_ <- seq(min(k_range) - 0.5, min(k_range), by = 0.05)
-    joint_results <- 
-      choose_joint_lambda_k(data$x_cs, data$y_cs, lambda_range, k_range_)
+    # joint_results <- 
+    #   choose_joint_lambda_k(data$x_cs, data$y_cs, lambda_range, k_range_)
+    joint_results <- choose_joint_lambda_k(data$x_cs, data$y_cs, 
+                                           lambda_range, k_range, 
+                                           alpha = alpha, nfolds = CV_FOLDS)
   }
   
   joint_results_mat[1, i] <- joint_results$k

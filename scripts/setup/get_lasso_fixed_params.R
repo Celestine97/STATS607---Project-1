@@ -19,7 +19,7 @@ x_cs <- scale(x_cs_, scale = FALSE, center = TRUE) # center the columns of X
 # regression coefficients
 beta_full <- rnorm(d, 0, 1)
 
-outfile <- '../simulation_results/fixed_params/lasso_fixed_params.RData'
+outfile <- 'results/simulation_results/fixed_params/lasso_fixed_params.RData'
 print(paste0('saving to: ', outfile))
 save.image(outfile)
 

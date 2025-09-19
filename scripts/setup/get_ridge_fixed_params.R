@@ -23,6 +23,6 @@ beta_full <- rnorm(d, 0, 1)
 
 s <- 0 # sparsity; for ridge, we do not assume sparsity
 
-outfile <- '../simulation_results/fixed_params/ridge_fixed_params.RData'
+outfile <- 'results/simulation_results/fixed_params/ridge_fixed_params.RData'
 print(paste0('saving to: ', outfile))
 save.image(outfile)
