@@ -10,25 +10,37 @@ library(rlist)
 
 set.seed(38989201)
 
-args <- commandArgs(TRUE)
-sigma <- as.double(args[1]) # std of error terms; we will vary this
-s <- as.double(args[2]) # sparsity
-alpha <- as.double(args[3]) # 0 if ridge, 1 if lasso
-out_dir <- as.character(args[4])
+# Set default parameters for direct execution
+sigma <- 5        # noise level
+s <- 950         # sparsity 
+alpha <- 0       # 1 for LASSO, 0 for ridge
 
-print(sigma)
-print(s)
-print(alpha)
-print(out_dir)
+if (alpha == 0) {
+  out_dir <- "results/simulation_results/copas_ridge_results/"
+} else {
+  out_dir <- "results/simulation_results/copas_lasso_results/"
+}
+
+
+# args <- commandArgs(TRUE)
+# sigma <- as.double(args[1]) # std of error terms; we will vary this
+# s <- as.double(args[2]) # sparsity
+# alpha <- as.double(args[3]) # 0 if ridge, 1 if lasso
+# out_dir <- as.character(args[4])
+# 
+# print(sigma)
+# print(s)
+# print(alpha)
+# print(out_dir)
 
 ######################
 # fixed parameters: 
 ######################
 if(alpha == 0){
-  load('../simulation_results/fixed_params/ridge_fixed_params.RData')
+  load('results/simulation_results/fixed_params/ridge_fixed_params.RData')
   method <- 'ridge'
 }else if(alpha == 1){
-  load('../simulation_results/fixed_params/lasso_fixed_params.RData')
+  load('results/simulation_results/fixed_params/lasso_fixed_params.RData')
   method <- 'lasso'
 }else{
   stop('alpha should be equal to 1 or 0 (values in between 
@@ -38,7 +50,8 @@ if(alpha == 0){
 ######################
 # run simulations: 
 ######################
-n_trials <- 40 
+# n_trials <- 40 
+n_trials <- N_TRIALS
 
 # two rows, n_trials columns
 # first row stores the k's, second row stores the lambdas

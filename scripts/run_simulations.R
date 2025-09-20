@@ -16,8 +16,13 @@ set.seed(45345345)
 # Set default parameters for direct execution
 sigma <- 5        # noise level
 s <- 950         # sparsity 
-alpha <- 1       # 1 for LASSO, 0 for ridge
-out_dir <- "results/simulation_results"
+alpha <- 0       # 1 for LASSO, 0 for ridge
+
+if (alpha == 0) {
+  out_dir <- "results/simulation_results/joint_cv_ridge_results/"
+} else {
+  out_dir <- "results/simulation_results/joint_cv_lasso_results/"
+}
 
 # args <- commandArgs(TRUE)
 # sigma <- as.double(args[1]) # std of error terms; we will vary this
