@@ -22,10 +22,8 @@ cat("Running single response simulations...\n")
 # Run a subset of simulations (not full cluster scale)
 cat("joint cross-validation")
 source('scripts/run_simulations.R')
-
 cat("two step")
 source('scripts/run_simulations_two_step.R')
-
 cat("copas")
 source('scripts/run_simulations_copas.R')
 
@@ -37,5 +35,7 @@ source('scripts/run_simulations_copas.R')
 
 cat("Running analysis")
 source('scripts/explore_ridge_regression_results.R')
+# source('scripts/explore_lasso_regression_results.R')
+# source('scripts/explore_lasso_regression_results_vary_sparsity.R')
 
 cat("Analysis complete! Check results/ directory for outputs.\n")

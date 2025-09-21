@@ -11,22 +11,22 @@ source('R/utils.R')
 options(repr.plot.width=6, repr.plot.height=4) # plot sizes in this notebook
 
 set.seed(5645654)
-save_figs <- FALSE
+save_figs <- SAVE_FIG
 
 load('results/simulation_results/fixed_params/ridge_fixed_params.RData')
 
 # results_dir <- 'results/simulation_results/ridge_results2/'
-results_dir <- 'results/simulation_results/'
+results_dir <- 'results/simulation_results/joint_cv_ridge_results/'
 file_list <- list.files(path = results_dir, pattern = '*.rds')
 
 # one case
 result1 <- list.load(paste0(results_dir, 'ridge_sim_results_sigma5_sparsity0.rds'))
 two_step_results <- 
   list.load(
-    paste0('results/simulation_results/ridge_two_step_sim_results_sigma5_sparsity0.rds'))
+    paste0('results/simulation_results/two_step_ridge_results/ridge_two_step_sim_results_sigma5_sparsity0.rds'))
 copas_results <- 
   list.load(
-    paste0('results/simulation_results/ridge_copas_sim_results_sigma5_sparsity0.rds'))
+    paste0('results/simulation_results/copas_ridge_results/ridge_copas_sim_results_sigma5_sparsity0.rds'))
 
 n_trials <- length(result1$ols_slope_cs)
 
@@ -44,7 +44,7 @@ data.frame(ols = result1$ols_slope_vs,
   geom_vline(xintercept = 1., linetype = 'dashed')
 
 if(TRUE){
-  ggsave('results/writing/ridge_figures_new/slope_distr_hist_sigma5.png', width = 9, height = 6)
+  ggsave('results/figures/ridge_figures/slope_distr_hist_sigma5.png', width = 9, height = 6)
 }
 
 data.frame(ols = result1$ols_mspe_vs, 
@@ -66,7 +66,7 @@ data.frame(ols = result1$ols_mspe_vs,
         axis.ticks.x=element_blank())
 
 if(save_figs){
-  ggsave('results/writing/ridge_figures_new/mspe_distr_sigma5.png', width = 9, height = 6)
+  ggsave('results/figures/ridge_figures/mspe_distr_sigma5.png', width = 9, height = 6)
 }
 
 
@@ -96,21 +96,7 @@ get_results_across_sigma <- function(results_dir, name){
               sigmas = sigmas))
 }
 
-copas_result_dir <- './simulation_results/copas_ridge_results/'
-copas_slopes <- get_results_across_sigma(copas_result_dir, 'copas_slope_vs')
-slope_medians <- c(slope_medians, copas_slopes$median)
-sigmas <- c(sigmas, copas_slopes$sigmas)
-method <- c(method, rep('Copas', length(copas_slopes$sigmas)))
-
-slope_result_names <- c('ols_slope_vs', 
-                        'lambda_only_slope_vs', 
-                        'joint_slope_vs')
-
-mspe_result_names <- c('ols_mspe_vs', 
-                       'lambda_only_mspe_vs', 
-                       'joint_mspe_vs')
-
-
+# Replace the loop section with:
 slope_medians <- c()
 slope_upper_quart <- c()
 slope_lower_quart <- c()
@@ -118,35 +104,68 @@ sigmas <- c()
 mspe_medians <- c()
 mspe_upper_quart <- c()
 mspe_lower_quart <- c()
+method <- c()
+
+slope_result_names <- c('ols_slope_vs',
+                        'lambda_only_slope_vs',
+                        'joint_slope_vs')
+mspe_result_names <- c('ols_mspe_vs',
+                       'lambda_only_mspe_vs',
+                       'joint_mspe_vs')
+
+# for joint CV results
+joint_cv_results_dir <- 'results/simulation_results/joint_cv_ridge_results/'
 
 for(i in 1:length(mspe_result_names)){
-  slope_results <- get_results_across_sigma(results_dir, slope_result_names[i])
+  slope_results <- get_results_across_sigma(joint_cv_results_dir, slope_result_names[i])
   slope_medians <- c(slope_medians, slope_results$median)
   slope_upper_quart <- c(slope_upper_quart, slope_results$upper_quart)
   slope_lower_quart <- c(slope_lower_quart, slope_results$lower_quart)
   sigmas <- c(sigmas, slope_results$sigmas)
   
-  mspe_results <- get_results_across_sigma(results_dir, mspe_result_names[i])
+  mspe_results <- get_results_across_sigma(joint_cv_results_dir, mspe_result_names[i])
   mspe_medians <- c(mspe_medians, mspe_results$median)
   mspe_upper_quart <- c(mspe_upper_quart, mspe_results$upper_quart)
   mspe_lower_quart <- c(mspe_lower_quart, mspe_results$lower_quart)
-  
 }
-n_sigmas <- length(sigmas) / 3
 
+n_sigmas <- length(sigmas) / 3
 method <- c(rep('ols', n_sigmas), rep('ridge', n_sigmas), rep('joint', n_sigmas))
 
-copas_result_dir <- './simulation_results/copas_ridge_results/'
+# Add Copas results for both slopes AND MSPEs
+copas_result_dir <- 'results/simulation_results/copas_ridge_results/'
 copas_slopes <- get_results_across_sigma(copas_result_dir, 'copas_slope_vs')
+copas_mspes <- get_results_across_sigma(copas_result_dir, 'copas_mspe_vs')
+
 slope_medians <- c(slope_medians, copas_slopes$median)
+mspe_medians <- c(mspe_medians, copas_mspes$median)
+mspe_upper_quart <- c(mspe_upper_quart, copas_mspes$upper_quart)
+mspe_lower_quart <- c(mspe_lower_quart, copas_mspes$lower_quart)
+
 sigmas <- c(sigmas, copas_slopes$sigmas)
 method <- c(method, rep('Copas', length(copas_slopes$sigmas)))
 
-two_step_dir <- './simulation_results/two_step_ridge_results/'
+# Add two-step results for both slopes AND MSPEs
+two_step_dir <- 'results/simulation_results/two_step_ridge_results/'
 two_step_slopes <- get_results_across_sigma(two_step_dir, 'two_step_slope_vs')
+two_step_mspes <- get_results_across_sigma(two_step_dir, 'two_step_mspe_vs')
+
 slope_medians <- c(slope_medians, two_step_slopes$median)
+mspe_medians <- c(mspe_medians, two_step_mspes$median)
+mspe_upper_quart <- c(mspe_upper_quart, two_step_mspes$upper_quart)
+mspe_lower_quart <- c(mspe_lower_quart, two_step_mspes$lower_quart)
+
 sigmas <- c(sigmas, two_step_slopes$sigmas)
 method <- c(method, rep('two_step', length(two_step_slopes$sigmas)))
+
+# create the data frames
+slope_results_df <- data.frame(sigma = sigmas, 
+                               median_slope = slope_medians, 
+                               method = method)
+
+mspe_results_df <- data.frame(sigma = sigmas, 
+                              median_mspe = mspe_medians, 
+                              method = method)
 
 
 
@@ -156,18 +175,6 @@ slope_results_df <- data.frame(sigma = sigmas,
                                # upper_q = slope_upper_quart, 
                                # lower_q = slope_lower_quart, 
                                method = method)
-
-copas_result_dir <- './simulation_results/copas_ridge_results/'
-copas_mspes <- get_results_across_sigma(copas_result_dir, 'copas_mspe_vs')
-mspe_medians <- c(mspe_medians, copas_mspes$median)
-# sigmas <- c(sigmas, copas_mspes$sigmas)
-# method <- c(method, rep('Copas', length(copas_mspes$sigmas)))
-
-two_step_dir <- './simulation_results/two_step_ridge_results/'
-two_step_mspes <- get_results_across_sigma(two_step_dir, 'two_step_mspe_vs')
-mspe_medians <- c(mspe_medians, two_step_mspes$median)
-# sigmas <- c(sigmas, two_step_slopes$sigmas)
-# method <- c(method, rep('two_step', length(two_step_mspes$sigmas)))
 
 mspe_results_df <- data.frame(sigma = sigmas, 
                               median_mspe = mspe_medians, 
@@ -185,7 +192,7 @@ slope_results_df %>% ggplot(aes(x = sigmas, y = median_slope)) +
 # geom_errorbar(aes(ymin = lower_q, ymax = upper_q, color = method))
 
 if(save_figs){
-  ggsave('../writing/ridge_figures/slopes_over_sigmas.png', width = 9, height = 6)
+  ggsave('results/figures/ridge_figures/slopes_over_sigmas.png', width = 9, height = 6)
 }
 mspe_results_df %>% 
   spread(method, median_mspe) %>% 
@@ -203,7 +210,7 @@ mspe_results_df %>%
 # geom_errorbar(aes(ymin = lower_q, ymax = upper_q, color = method))
 
 if(save_figs){
-  ggsave('../writing/ridge_figures/mspe_over_sigmas.png', width = 9, height = 6)
+  ggsave('results/figures/ridge_figures/mspe_over_sigmas.png', width = 9, height = 6)
 }
 
 
