@@ -29,7 +29,7 @@ results <- lapply(pp, function(p){
 results <- Reduce(rbind, rlang::squash(results), init = list())
 # save(results, file = 'results.rda')
 # Fix output paths
-save(results, file = 'results/simulation_results/multi_response/multi_response_results(curds).rda')
+save(results, file = paste0(MULTI_RESPONSE_DIR, 'multi_response_results(curds).rda'))
 library(ggplot2)
 
 p1 <- results %>% 
@@ -46,4 +46,4 @@ p1 <- results %>%
   facet_grid(N ~ p)
 
 # p1 
-ggsave('results/figures/TSE_curds.pdf', plot = p1, width = 14, height = 10)
+ggsave(paste0(MULTI_RESPONSE_FIGURE_DIR, 'TSE_curds.pdf'), plot = p1, width = 14, height = 10)

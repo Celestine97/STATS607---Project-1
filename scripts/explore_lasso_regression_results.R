@@ -12,8 +12,8 @@ options(repr.plot.width=6, repr.plot.height=4) # plot sizes in this notebook
 set.seed(5645654)
 save_figs <- SAVE_FIG
 
-# results directory
-results_dir <- 'results/simulation_results/joint_cv_lasso_results/'
+# Use config values for directories
+results_dir <- LASSO_OUTPUT_DIR
 file_list <- list.files(path = results_dir, pattern = '*.rds')
 
 get_results_across_sigma <- function(results_dir, name){
@@ -46,13 +46,15 @@ slopes <- c(slopes, joint_slopes$results)
 sigmas <- c(sigmas, joint_slopes$sigmas)
 method <- c(method, rep('joint', length(joint_slopes$sigmas)))  # Use joint_slopes length
 
-copas_result_dir <- 'results/simulation_results/copas_lasso_results/'
+# Use config values for Copas directory
+copas_result_dir <- LASSO_COPAS_OUTPUT_DIR
 copas_slopes <- get_results_across_sigma(copas_result_dir, 'copas_slope_vs')
 slopes <- c(slopes, copas_slopes$results)
 sigmas <- c(sigmas, copas_slopes$sigmas)
 method <- c(method, rep('Copas', length(copas_slopes$sigmas)))
 
-two_step_dir <- 'results/simulation_results/two_step_lasso_results/'
+# Use config values for two-step directory
+two_step_dir <- LASSO_TWO_STEP_OUTPUT_DIR
 two_step_slopes <- get_results_across_sigma(two_step_dir, 'two_step_slope_vs')
 slopes <- c(slopes, two_step_slopes$results)
 sigmas <- c(sigmas, two_step_slopes$sigmas)
@@ -80,7 +82,7 @@ slopes_df %>%
   theme(text = element_text(size = 25), plot.title = element_text(hjust = 0.5))
 
 if(save_figs){
-  ggsave('results/figures/lasso_figures/slope_vs_sigma.png', height = 6, width = 9)
+  ggsave(paste0(LASSO_FIGURES_DIR, 'slope_vs_sigma.png'), height = 6, width = 9)
 }
 
 # Lets look at one particular sigma
@@ -101,7 +103,7 @@ slopes_df %>%
         axis.ticks.x=element_blank()) + scale_x_continuous(breaks = NULL)
 
 if(save_figs){
-  ggsave('results/figures/lasso_figures/slopes_sigma5.png', height = 6, width = 9)    
+  ggsave(paste0(LASSO_FIGURES_DIR, 'slopes_sigma5.png'), height = 6, width = 9)    
 }
 
 slopes_df %>% 
@@ -114,7 +116,7 @@ slopes_df %>%
   theme(text = element_text(size = 25), plot.title = element_text(hjust = 0.5)) 
 
 if(save_figs){
-  ggsave('results/figures/lasso_figures/hist_lasso_sigma5.png', height = 6, width = 9)    
+  ggsave(paste0(LASSO_FIGURES_DIR, 'hist_lasso_sigma5.png'), height = 6, width = 9)    
 }
 
 # Look at MSPEs
@@ -132,13 +134,15 @@ mspes <- c(mspes, joint_mspes$results)
 sigmas <- c(sigmas, joint_mspes$sigmas)
 method <- c(method, rep('joint', length(joint_mspes$sigmas)))  # <- Change this line
 
-copas_result_dir <- 'results/simulation_results/copas_lasso_results/'
+# Use config values for Copas directory
+copas_result_dir <- LASSO_COPAS_OUTPUT_DIR
 copas_mspes <- get_results_across_sigma(copas_result_dir, 'copas_mspe_vs')
 mspes <- c(mspes, copas_mspes$results)
 sigmas <- c(sigmas, copas_mspes$sigmas)
 method <- c(method, rep('Copas', length(copas_mspes$sigmas)))
 
-two_step_dir <- 'results/simulation_results/two_step_lasso_results/'
+# Use config values for two-step directory
+two_step_dir <- LASSO_TWO_STEP_OUTPUT_DIR
 two_step_mspes <- get_results_across_sigma(two_step_dir, 'two_step_mspe_vs')
 mspes <- c(mspes, two_step_mspes$results)
 sigmas <- c(sigmas, two_step_mspes$sigmas)
@@ -165,7 +169,7 @@ mspes_df %>%
   ylab('MSPE relative to LASSO') + theme_bw() + 
   theme(text = element_text(size = 25), plot.title = element_text(hjust = 0.5))
 if(save_figs){
-  ggsave('results/figures/lasso_figures/mspe_vs_sigma.png', height = 6, width = 9)    
+  ggsave(paste0(LASSO_FIGURES_DIR, 'mspe_vs_sigma.png'), height = 6, width = 9)    
 }
 
 mspes_df %>% 
@@ -183,5 +187,5 @@ mspes_df %>%
         axis.ticks.x=element_blank()) + scale_x_continuous(breaks = NULL)
 
 if(save_figs){
-  ggsave('results/figures/lasso_figures/mspes_sigma5.png', height = 6, width = 9)    
+  ggsave(paste0(LASSO_FIGURES_DIR, 'mspes_sigma5.png'), height = 6, width = 9)    
 }

@@ -27,15 +27,15 @@ source('scripts/run_simulations_two_step.R')
 cat("copas")
 source('scripts/run_simulations_copas.R')
 
-# cat("Running multi-response simulations...\n") 
-# source('scripts/run_multi_response_sims(curds).R')
+cat("Running multi-response simulations...\n")
+source('scripts/run_multi_response_sims(curds).R')
 
-# cat("Running sparse multi-response simulations...\n")
-# source('scripts/run_multi_response_sims(sparse_curds).R')
+cat("Running sparse multi-response simulations...\n")
+source('scripts/run_multi_response_sims(sparse_curds).R')
 
 cat("Running analysis")
 source('scripts/explore_ridge_regression_results.R')
-# source('scripts/explore_lasso_regression_results.R')
-# source('scripts/explore_lasso_regression_results_vary_sparsity.R')
+source('scripts/explore_lasso_regression_results.R')
+source('scripts/explore_lasso_regression_results_vary_sparsity.R')
 
 cat("Analysis complete! Check results/ directory for outputs.\n")

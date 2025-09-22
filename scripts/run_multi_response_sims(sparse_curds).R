@@ -45,7 +45,7 @@ sparse_results <- lapply(NN, function(N){
 sparse_results <- Reduce(rbind, rlang::squash(sparse_results), init = list())
 # save(sparse_results, file = 'sparse_results.rda')
 # Fix output path
-save(sparse_results, file = 'results/simulation_results/multi_response/sparse_results.rda')
+save(sparse_results, file = paste0(MULTI_RESPONSE_DIR, 'sparse_results.rda'))
 library(ggplot2)
 
 p2 <- sparse_results %>% 
@@ -64,4 +64,4 @@ p2 <- sparse_results %>%
 
 # p2
 # ggsave('TSE_sparse_curds.pdf', plot = p2, width = 14, height = 10)
-ggsave('results/figures/TSE_sparse_curds.pdf', plot = p2, width = 14, height = 10)
+ggsave(paste0(MULTI_RESPONSE_FIGURE_DIR, 'TSE_sparse_curds.pdf'), plot = p2, width = 14, height = 10)

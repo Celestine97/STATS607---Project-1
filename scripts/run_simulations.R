@@ -3,7 +3,6 @@
 # using OLS, traditional ridge (LASSO), 
 # or joint cv-selected lambda and k
 
-# source('../simulation_utils.R') original source
 source('R/utils.R')
 source('R/single_response.R')
 source('R/multi_response.R')           # for multi-response scripts
@@ -16,11 +15,31 @@ set.seed(45345345)
 # Set parameters from the configuration
 alpha <- ALPHA       # 1 for LASSO, 0 for ridge
 
+# Determine which parameters to use based on method
 if (alpha == 0) {
-  out_dir <- "results/simulation_results/joint_cv_ridge_results/"
+  # Ridge regression
+  sigma_values <- RIDGE_SIGMA_VALUES
+  sparsity_values <- c(0)  # Ridge always uses 0 sparsity
+  base_output_dir <- RIDGE_OUTPUT_DIR
+  method <- 'ridge'
 } else {
-  out_dir <- "results/simulation_results/joint_cv_lasso_results/"
+  # Lasso regression
+  sigma_values <- LASSO_SIGMA_VALUES
+  sparsity_values <- LASSO_SPARSITY_VALUES  # This will use the modified value
+  method <- 'lasso'
+  
+  # Determine output directory based on number of sparsity values
+  if (length(sparsity_values) >= 2) {
+    # Multiple sparsity values - use sparsity-specific directory
+    base_output_dir <- LASSO_CV_SPARSITY_OUTPUT_DIR
+    cat("Using sparsity-specific output directory for multiple sparsity values\n")
+  } else {
+    # Single sparsity value - use main Copas directory
+    base_output_dir <- LASSO_OUTPUT_DIR
+    cat("Using main output directory for single sparsity value\n")
+  }
 }
+
 
 # args <- commandArgs(TRUE)
 # sigma <- as.double(args[1]) # std of error terms; we will vary this
@@ -36,30 +55,27 @@ if (alpha == 0) {
 ######################
 # fixed parameters: 
 ######################
+# Save the current value before loading
+temp_sparsity <- LASSO_SPARSITY_VALUES
+
 if(alpha == 0){
-  load('results/simulation_results/fixed_params/ridge_fixed_params.RData')
-  method <- 'ridge'
+  load(paste0(FIXED_PARAMS_DIR, 'ridge_fixed_params.RData'))
 }else if(alpha == 1){
-  load('results/simulation_results/fixed_params/lasso_fixed_params.RData')
-  method <- 'lasso'
-}else{
-  stop('alpha should be equal to 1 or 0 (values in between 
-       not implemented/tested yet)')
+  load(paste0(FIXED_PARAMS_DIR, 'lasso_fixed_params.RData'))
+  # Restore the modified value after loading
+  LASSO_SPARSITY_VALUES <<- temp_sparsity
 }
 
-# n_trials <- 500 
+# Use configuration values
 n_trials <- N_TRIALS
-
-# the range of shrinkage factors we will consider
-# k_range <- seq(0.5, 1.5, by = 0.05)
 k_range <- K_RANGE
 
 # Loop through each sigma value
-for (sigma_val in SIGMA_VALUES) {
+for (sigma_val in sigma_values) {
   sigma <- sigma_val
   
   # Loop through each sparsity value
-  for (s_val in SPARSITY) {
+  for (s_val in sparsity_values) {
     s <- s_val
     
     ######################
@@ -106,8 +122,7 @@ for (sigma_val in SIGMA_VALUES) {
       }
       
       # choose only lambda
-      # cv_fit <- cv.glmnet(data$x_cs, data$y_cs, alpha = alpha) 
-      # customize number of cv_folds
+      # Use configuration value for CV folds
       cv_fit <- cv.glmnet(data$x_cs, data$y_cs, alpha = alpha, nfolds = CV_FOLDS) 
       lambda_range <- cv_fit$lambda
       min_lambda <- cv_fit$lambda.min
@@ -124,8 +139,6 @@ for (sigma_val in SIGMA_VALUES) {
       lambda_only_mspe_vs[i] <- drop(get_mspe(lambda_only_vs_pred, data$y_vs))
       
       # choose joint lambda and k
-      # joint_results <- choose_joint_lambda_k(data$x_cs, data$y_cs, 
-      #                                        lambda_range, k_range)
       joint_results <- choose_joint_lambda_k(data$x_cs, data$y_cs, 
                                              lambda_range, k_range, 
                                              alpha = alpha, nfolds = CV_FOLDS)
@@ -134,14 +147,13 @@ for (sigma_val in SIGMA_VALUES) {
         print('expanding k_range ... ')
         k_range_ <- seq(max(k_range), max(k_range) + 0.5, by = 0.05)
         joint_results <- 
-          choose_joint_lambda_k(data$x_cs, data$y_cs, lambda_range, k_range_)
+          choose_joint_lambda_k(data$x_cs, data$y_cs, lambda_range, k_range_,
+                                alpha = alpha, nfolds = CV_FOLDS)
       }else if(joint_results$k == min(k_range)){
         print('expanding k_range ... ')
         k_range_ <- seq(min(k_range) - 0.5, min(k_range), by = 0.05)
-        # joint_results <- 
-        #   choose_joint_lambda_k(data$x_cs, data$y_cs, lambda_range, k_range_)
         joint_results <- choose_joint_lambda_k(data$x_cs, data$y_cs, 
-                                               lambda_range, k_range, 
+                                               lambda_range, k_range_, 
                                                alpha = alpha, nfolds = CV_FOLDS)
       }
       
@@ -180,8 +192,13 @@ for (sigma_val in SIGMA_VALUES) {
            alpha = alpha,
            s = s)
     
+    # Create output directory if it doesn't exist
+    if (!dir.exists(base_output_dir)) {
+      dir.create(base_output_dir, recursive = TRUE)
+      cat("Created output directory:", base_output_dir, "\n")
+    }
     
-    outfile <- paste0(out_dir,
+    outfile <- paste0(base_output_dir,
                       method, '_sim_results_', 
                       'sigma', sigma, '_sparsity', s, '.rds')
     print(paste0('Done with sigma = ', sigma, ', sparsity = ', s, '. Saving results to ', outfile))

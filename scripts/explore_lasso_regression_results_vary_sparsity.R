@@ -13,7 +13,8 @@ options(repr.plot.width=6, repr.plot.height=4) # plot sizes in this notebook
 set.seed(5645654)
 save_figs <- SAVE_FIG
 
-results_dir <- 'results/simulation_results/joint_cv_lasso_results/'
+# Use config values for directories
+results_dir <- LASSO_CV_SPARSITY_OUTPUT_DIR
 
 file_list <- list.files(path = results_dir, pattern = '*.rds')
 
@@ -47,13 +48,15 @@ slopes <- c(slopes, joint_slopes$results)
 sparsities <- c(sparsities, joint_slopes$sparsities)
 method <- c(method, rep('joint', length(joint_slopes$sparsities)))
 
-copas_result_dir <- 'results/simulation_results/copas_lasso_results/'
+# Use config values for Copas directory
+copas_result_dir <- LASSO_COPAS_SPARSITY_OUTPUT_DIR
 copas_slopes <- get_results_across_sparsity(copas_result_dir, 'copas_slope_vs')
 slopes <- c(slopes, copas_slopes$results)
 sparsities <- c(sparsities, copas_slopes$sparsities)
 method <- c(method, rep('Copas', length(copas_slopes$sparsities)))
 
-two_step_dir <- 'results/simulation_results/two_step_lasso_results/'
+# Use config values for two-step directory
+two_step_dir <- LASSO_TWO_STEP_SPARSITY_OUTPUT_DIR
 two_step_slopes <- get_results_across_sparsity(two_step_dir, 'two_step_slope_vs')
 slopes <- c(slopes, two_step_slopes$results)
 sparsities <- c(sparsities, two_step_slopes$sparsities)
@@ -75,7 +78,7 @@ slopes_df %>%
   theme(text = element_text(size = 25), plot.title = element_text(hjust = 0.5))
 
 if(save_figs){
-  ggsave('results/figures/lasso_figures/slope_vs_sparsity.png', height = 6, width = 9)
+  ggsave(paste0(LASSO_FIGURES_DIR, 'slope_vs_sparsity.png'), height = 6, width = 9)
 }
 
 mspes <- c()
@@ -92,13 +95,15 @@ mspes <- c(mspes, joint_mspes$results)
 sparsities <- c(sparsities, joint_mspes$sparsities)
 method <- c(method, rep('joint', length(joint_mspes$sparsities))) 
 
-copas_result_dir <- 'results/simulation_results/copas_lasso_results/'
+# Use config values for Copas directory
+copas_result_dir <- LASSO_COPAS_SPARSITY_OUTPUT_DIR
 copas_mspes <- get_results_across_sparsity(copas_result_dir, 'copas_mspe_vs')
 mspes <- c(mspes, copas_mspes$results)
 sparsities <- c(sparsities, copas_mspes$sparsities)
 method <- c(method, rep('Copas', length(copas_mspes$sparsities)))
 
-two_step_dir <- 'results/simulation_results/two_step_lasso_results/'
+# Use config values for two-step directory
+two_step_dir <- LASSO_TWO_STEP_SPARSITY_OUTPUT_DIR
 two_step_mspes <- get_results_across_sparsity(two_step_dir, 'two_step_mspe_vs')
 mspes <- c(mspes, two_step_mspes$results)
 sparsities <- c(sparsities, two_step_mspes$sparsities)
@@ -127,6 +132,5 @@ mspes_df %>%
   theme(text = element_text(size = 25), plot.title = element_text(hjust = 0.5))
 
 if(save_figs){
-  ggsave('results/figures/lasso_figures/mspe_vs_sparsity.png', height = 6, width = 9)    
+  ggsave(paste0(LASSO_FIGURES_DIR, 'mspe_vs_sparsity.png'), height = 6, width = 9)    
 }
-

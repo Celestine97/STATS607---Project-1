@@ -11,23 +11,21 @@ source('R/utils.R')
 options(repr.plot.width=6, repr.plot.height=4) # plot sizes in this notebook
 
 set.seed(5645654)
+
 save_figs <- SAVE_FIG
+load(paste0(FIXED_PARAMS_DIR, 'ridge_fixed_params.RData'))
+results_dir <- RIDGE_OUTPUT_DIR
 
-load('results/simulation_results/fixed_params/ridge_fixed_params.RData')
-
-# results_dir <- 'results/simulation_results/ridge_results2/'
-results_dir <- 'results/simulation_results/joint_cv_ridge_results/'
 file_list <- list.files(path = results_dir, pattern = '*.rds')
 
 # one case
 result1 <- list.load(paste0(results_dir, 'ridge_sim_results_sigma5_sparsity0.rds'))
 two_step_results <- 
   list.load(
-    paste0('results/simulation_results/two_step_ridge_results/ridge_two_step_sim_results_sigma5_sparsity0.rds'))
+    paste0(RIDGE_TWO_STEP_OUTPUT_DIR, 'ridge_two_step_sim_results_sigma5_sparsity0.rds'))
 copas_results <- 
   list.load(
-    paste0('results/simulation_results/copas_ridge_results/ridge_copas_sim_results_sigma5_sparsity0.rds'))
-
+    paste0(RIDGE_COPAS_OUTPUT_DIR, 'ridge_copas_sim_results_sigma5_sparsity0.rds'))
 n_trials <- length(result1$ols_slope_cs)
 
 data.frame(ols = result1$ols_slope_vs, 
@@ -44,7 +42,7 @@ data.frame(ols = result1$ols_slope_vs,
   geom_vline(xintercept = 1., linetype = 'dashed')
 
 if(TRUE){
-  ggsave('results/figures/ridge_figures/slope_distr_hist_sigma5.png', width = 9, height = 6)
+  ggsave(paste0(RIDGE_FIGURES_DIR, 'slope_distr_hist_sigma5.png'), width = 9, height = 6)
 }
 
 data.frame(ols = result1$ols_mspe_vs, 
@@ -66,7 +64,7 @@ data.frame(ols = result1$ols_mspe_vs,
         axis.ticks.x=element_blank())
 
 if(save_figs){
-  ggsave('results/figures/ridge_figures/mspe_distr_sigma5.png', width = 9, height = 6)
+  ggsave(paste0(RIDGE_FIGURES_DIR, 'mspe_distr_sigma5.png'), width = 9, height = 6)
 }
 
 
@@ -114,7 +112,7 @@ mspe_result_names <- c('ols_mspe_vs',
                        'joint_mspe_vs')
 
 # for joint CV results
-joint_cv_results_dir <- 'results/simulation_results/joint_cv_ridge_results/'
+joint_cv_results_dir <- RIDGE_OUTPUT_DIR
 
 for(i in 1:length(mspe_result_names)){
   slope_results <- get_results_across_sigma(joint_cv_results_dir, slope_result_names[i])
@@ -133,7 +131,7 @@ n_sigmas <- length(sigmas) / 3
 method <- c(rep('ols', n_sigmas), rep('ridge', n_sigmas), rep('joint', n_sigmas))
 
 # Add Copas results for both slopes AND MSPEs
-copas_result_dir <- 'results/simulation_results/copas_ridge_results/'
+copas_result_dir <- RIDGE_COPAS_OUTPUT_DIR
 copas_slopes <- get_results_across_sigma(copas_result_dir, 'copas_slope_vs')
 copas_mspes <- get_results_across_sigma(copas_result_dir, 'copas_mspe_vs')
 
@@ -146,7 +144,7 @@ sigmas <- c(sigmas, copas_slopes$sigmas)
 method <- c(method, rep('Copas', length(copas_slopes$sigmas)))
 
 # Add two-step results for both slopes AND MSPEs
-two_step_dir <- 'results/simulation_results/two_step_ridge_results/'
+two_step_dir <- RIDGE_TWO_STEP_OUTPUT_DIR
 two_step_slopes <- get_results_across_sigma(two_step_dir, 'two_step_slope_vs')
 two_step_mspes <- get_results_across_sigma(two_step_dir, 'two_step_mspe_vs')
 
@@ -192,7 +190,7 @@ slope_results_df %>% ggplot(aes(x = sigmas, y = median_slope)) +
 # geom_errorbar(aes(ymin = lower_q, ymax = upper_q, color = method))
 
 if(save_figs){
-  ggsave('results/figures/ridge_figures/slopes_over_sigmas.png', width = 9, height = 6)
+  ggsave(paste0(RIDGE_FIGURES_DIR, 'slopes_over_sigmas.png'), width = 9, height = 6)
 }
 mspe_results_df %>% 
   spread(method, median_mspe) %>% 
@@ -210,7 +208,7 @@ mspe_results_df %>%
 # geom_errorbar(aes(ymin = lower_q, ymax = upper_q, color = method))
 
 if(save_figs){
-  ggsave('results/figures/ridge_figures/mspe_over_sigmas.png', width = 9, height = 6)
+  ggsave(paste0(RIDGE_FIGURES_DIR, 'mspe_over_sigmas.png'), width = 9, height = 6)
 }
 
 

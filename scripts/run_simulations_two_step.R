@@ -9,13 +9,32 @@ library(glmnet)
 library(rlist)
 set.seed(5636535)
 
-# Set default parameters for direct execution
+# Set parameters from the configuration
 alpha <- ALPHA       # 1 for LASSO, 0 for ridge
 
+# Determine which parameters to use based on method
 if (alpha == 0) {
-  out_dir <- "results/simulation_results/two_step_ridge_results/"
+  # Ridge regression
+  sigma_values <- RIDGE_SIGMA_VALUES
+  sparsity_values <- c(0)  # Ridge always uses 0 sparsity
+  base_output_dir <- RIDGE_TWO_STEP_OUTPUT_DIR
+  method <- 'ridge'
 } else {
-  out_dir <- "results/simulation_results/two_step_lasso_results/"
+  # Lasso regression
+  sigma_values <- LASSO_SIGMA_VALUES
+  sparsity_values <- LASSO_SPARSITY_VALUES  # Uses modified values
+  method <- 'lasso'
+  
+  # Determine output directory based on number of sparsity values
+  if (length(sparsity_values) >= 2) {
+    # Multiple sparsity values - use sparsity-specific directory
+    base_output_dir <- LASSO_TWO_STEP_SPARSITY_OUTPUT_DIR
+    cat("Using two-step sparsity-specific output directory for multiple sparsity values\n")
+  } else {
+    # Single sparsity value - use main two-step directory
+    base_output_dir <- LASSO_TWO_STEP_OUTPUT_DIR
+    cat("Using main two-step output directory for single sparsity value\n")
+  }
 }
 
 # args <- commandArgs(TRUE)
@@ -32,26 +51,26 @@ if (alpha == 0) {
 ######################
 # fixed parameters: 
 ######################
+# Save the current value before loading
+temp_sparsity <- LASSO_SPARSITY_VALUES
+
 if(alpha == 0){
-  load('results/simulation_results/fixed_params/ridge_fixed_params.RData')
-  method <- 'ridge'
+  load(paste0(FIXED_PARAMS_DIR, 'ridge_fixed_params.RData'))
 }else if(alpha == 1){
-  load('results/simulation_results/fixed_params/lasso_fixed_params.RData')
-  method <- 'lasso'
-}else{
-  stop('alpha should be equal to 1 or 0 (values in between 
-       not implemented/tested yet)')
+  load(paste0(FIXED_PARAMS_DIR, 'lasso_fixed_params.RData'))
+  # Restore the modified value after loading
+  LASSO_SPARSITY_VALUES <<- temp_sparsity
 }
 
-# n_trials <- 100
+# Use configuration values
 n_trials <- N_TRIALS
 
 # Loop through each sigma value
-for (sigma_val in SIGMA_VALUES) {
+for (sigma_val in sigma_values) {
   sigma <- sigma_val
   
   # Loop through each sparsity value
-  for (s_val in SPARSITY) {
+  for (s_val in sparsity_values) {
     s <- s_val
     
     ######################
@@ -72,9 +91,9 @@ for (sigma_val in SIGMA_VALUES) {
       }
       data <- draw_cs_vs_sample(x_cs, beta_full, s, sigma, n_vs)  # draw data
       
-      # K after CV
-      K <- get_two_step_cv_k(data$x_cs, data$y_cs, alpha = alpha, nfolds = 10)
-      cv_fit <- cv.glmnet(data$x_cs, data$y_cs, alpha = alpha, nfolds = 10) 
+      # K after CV - use configuration value for CV folds
+      K <- get_two_step_cv_k(data$x_cs, data$y_cs, alpha = alpha, nfolds = CV_FOLDS)
+      cv_fit <- cv.glmnet(data$x_cs, data$y_cs, alpha = alpha, nfolds = CV_FOLDS) 
       two_step_results_mat[1, i] <- K
       two_step_results_mat[2, i] <- cv_fit$lambda.min
       # get prediction
@@ -100,7 +119,13 @@ for (sigma_val in SIGMA_VALUES) {
            alpha = alpha, 
            s = s)
     
-    outfile <- paste0(out_dir,
+    # Create output directory if it doesn't exist
+    if (!dir.exists(base_output_dir)) {
+      dir.create(base_output_dir, recursive = TRUE)
+      cat("Created output directory:", base_output_dir, "\n")
+    }
+    
+    outfile <- paste0(base_output_dir,
                       method, '_two_step_sim_results_', 
                       'sigma', sigma, '_sparsity', s, '.rds')
     print(paste0('Done with sigma = ', sigma, ', sparsity = ', s, '. Saving results to ', outfile))
