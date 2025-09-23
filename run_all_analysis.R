@@ -43,7 +43,7 @@ run_lasso_analysis <- function() {
   # Set alpha for lasso
   assign("ALPHA", 1, envir = .GlobalEnv)
   
-  # PHASE 1: Non-sparse lasso (single sparsity value)
+  # PHASE 1: Single sparsity value lasso
   cat("\n--- PHASE 1: Non-sparse Lasso ---\n")
   cat("Using single sparsity value:", LASSO_SPARSITY_VALUE_SINGLE, "\n")
   
@@ -65,7 +65,7 @@ run_lasso_analysis <- function() {
   cat("- Copas procedure simulations (non-sparse)...\n")
   source('scripts/run_simulations_copas.R')
   
-  # PHASE 2: Sparse lasso (multiple sparsity values)
+  # PHASE 2: Multiple sparsity values lasso
   cat("\n--- PHASE 2: Sparse Lasso ---\n")
   cat("Using multiple sparsity values:", paste(original_sparsity, collapse=", "), "\n")
   

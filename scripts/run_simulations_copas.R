@@ -36,17 +36,6 @@ if (alpha == 0) {
   }
 }
 
-# args <- commandArgs(TRUE)
-# sigma <- as.double(args[1]) # std of error terms; we will vary this
-# s <- as.double(args[2]) # sparsity
-# alpha <- as.double(args[3]) # 0 if ridge, 1 if lasso
-# out_dir <- as.character(args[4])
-# 
-# print(sigma)
-# print(s)
-# print(alpha)
-# print(out_dir)
-
 ######################
 # fixed parameters: 
 ######################
@@ -76,8 +65,6 @@ for (sigma_val in sigma_values) {
     # run simulations: 
     ######################
     
-    # two rows, n_trials columns
-    # first row stores the k's, second row stores the lambdas
     copas_k <- rep(0, n_trials)
     copas_slope_cs <- rep(0, n_trials)
     copas_slope_vs <- rep(0, n_trials)
@@ -97,21 +84,45 @@ for (sigma_val in sigma_values) {
         x <- data$x_cs
         x_new <- data$x_vs
       }else if (alpha == 1){
-        nonzero_indx <- 0
-        while(sum(nonzero_indx) < 2){
-          # lasso case
-          # do feature selection
-          data <- draw_cs_vs_sample(x_cs, beta_full, s, sigma, n_vs) 
-          lasso_fit <- cv.glmnet(data$x_cs, data$y_cs)
-          nonzero_indx <- which(coef(lasso_fit, s = lasso_fit$lambda.min) > 0)
+        # lasso case with improved feature selection
+        attempts <- 0
+        nonzero_indx <- c()
+        
+        while(length(nonzero_indx) < 2 && attempts < 10){
+          attempts <- attempts + 1
+          if(attempts > 1) {
+            # Redraw data if previous attempt failed
+            data <- draw_cs_vs_sample(x_cs, beta_full, s, sigma, n_vs) 
+          }
           
-          x <- data$x_cs[, nonzero_indx]
-          x_new <- data$x_vs[, nonzero_indx]
-          stopifnot(dim(x)[1] > dim(x)[2])
+          lasso_fit <- cv.glmnet(data$x_cs, data$y_cs)
+          nonzero_coefs <- coef(lasso_fit, s = lasso_fit$lambda.min)
+          nonzero_indx <- which(nonzero_coefs[-1] != 0)  # Remove intercept, check for non-zero
+          
+          if(length(nonzero_indx) < 2 && attempts <= 3) {
+            cat("Attempt", attempts, ": Only", length(nonzero_indx), "features selected, retrying...\n")
+          }
         }
-        stopifnot(dim(x)[2] >= 2)
-        stopifnot(dim(x_new)[2] >= 2)
+        
+        # If still insufficient features, use fallback method
+        if(length(nonzero_indx) < 2) {
+          cat("Using fallback: selecting top features by coefficient magnitude\n")
+          all_coefs <- abs(coef(lasso_fit, s = lasso_fit$lambda.min)[-1])  # Remove intercept
+          nonzero_indx <- order(all_coefs, decreasing = TRUE)[1:max(2, min(10, length(all_coefs)))]
+        }
+        
+        # Ensure we have valid indices
+        nonzero_indx <- nonzero_indx[nonzero_indx > 0 & nonzero_indx <= ncol(data$x_cs)]
+        
+        x <- data$x_cs[, nonzero_indx, drop = FALSE]
+        x_new <- data$x_vs[, nonzero_indx, drop = FALSE]
+        
+        # Final validation
+        stopifnot(ncol(x) >= 2)
+        stopifnot(ncol(x_new) >= 2)
+        stopifnot(nrow(x) > ncol(x))
       }
+      
       # run OLS 
       ols_fit <- glmnet(x, data$y_cs, lambda = 0)
       # get copas K

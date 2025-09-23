@@ -77,5 +77,9 @@ get_slope <- function(predicted_y, obs_y){
 }
 
 get_mspe <- function(predicted_y, obs_y){
-  return(colMeans((predicted_y - obs_y)**2))
+  if(is.vector(predicted_y) && is.vector(obs_y)) {
+    return(mean((predicted_y - obs_y)^2))
+  } else {
+    return(colMeans((predicted_y - obs_y)^2))
+  }
 }

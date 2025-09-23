@@ -6,16 +6,16 @@ LASSO_METHOD <- 1      # Lasso regression
 
 if(TEST_MODE) {
   # Test parameters - runs in minutes
-  N_TRIALS <- 5
-  K_RANGE_STEP <- 0.2        # Fewer K values to test
-  CV_FOLDS <- 3              # Fewer folds
+  N_TRIALS <- 10
+  K_RANGE_STEP <- 0.1       # Fewer K values to test
+  CV_FOLDS <- 5              # Fewer folds
   
   # Ridge parameters
   RIDGE_SIGMA_VALUES <- c(5, 10)
   
   # Lasso parameters  
   LASSO_SIGMA_VALUES <- c(5, 10)
-  LASSO_SPARSITY_VALUES <- c(50, 100)
+  LASSO_SPARSITY_VALUES <- c(900, 850)
   LASSO_SPARSITY_VALUE_SINGLE <- 950
   
   cat("=== TEST MODE: Reduced parameters for quick execution ===\n")
