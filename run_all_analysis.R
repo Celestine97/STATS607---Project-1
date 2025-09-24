@@ -34,7 +34,7 @@ run_ridge_analysis <- function() {
   cat("RIDGE analysis complete!\n")
 }
 
-# Function to run lasso analysis (both sparse and non-sparse)
+# Function to run lasso analysis (both comparison with sparsity and single sparsity)
 run_lasso_analysis <- function() {
   cat("\n" , rep("=", 50), "\n")
   cat("RUNNING LASSO ANALYSIS (SPARSE & NON-SPARSE)\n")
@@ -44,18 +44,13 @@ run_lasso_analysis <- function() {
   assign("ALPHA", 1, envir = .GlobalEnv)
   
   # PHASE 1: Single sparsity value lasso
-  cat("\n--- PHASE 1: Non-sparse Lasso ---\n")
+  cat("\n--- PHASE 1: Single Sparsity Value Lasso ---\n")
   cat("Using single sparsity value:", LASSO_SPARSITY_VALUE_SINGLE, "\n")
   
-  # Temporarily set to single sparsity value for non-sparse analysis
+  # Temporarily set to single sparsity value
   original_sparsity <- LASSO_SPARSITY_VALUES
-  # # Instead of:
-  # assign("LASSO_SPARSITY_VALUES", c(LASSO_SPARSITY_VALUE_SINGLE), envir = .GlobalEnv)
-  # 
-  # # Try:
   LASSO_SPARSITY_VALUES <<- c(LASSO_SPARSITY_VALUE_SINGLE)
   
-  cat("Step 1a: Running non-sparse lasso simulations...\n")
   cat("- Joint cross-validation simulations (non-sparse)...\n")
   source('scripts/run_simulations.R')
   
@@ -66,13 +61,12 @@ run_lasso_analysis <- function() {
   source('scripts/run_simulations_copas.R')
   
   # PHASE 2: Multiple sparsity values lasso
-  cat("\n--- PHASE 2: Sparse Lasso ---\n")
+  cat("\n--- PHASE 2: Multiple Sparsity Values Lasso ---\n")
   cat("Using multiple sparsity values:", paste(original_sparsity, collapse=", "), "\n")
   
   # Restore multiple sparsity values for sparse analysis
   LASSO_SPARSITY_VALUES <<- original_sparsity
   
-  cat("Step 1b: Running sparse lasso simulations...\n")
   cat("- Joint cross-validation simulations (sparse)...\n")
   source('scripts/run_simulations.R')
   
@@ -139,7 +133,7 @@ run_ridge_analysis()
 run_lasso_analysis()
 
 cat("\nRunning additional simulations...\n")
-# Multi-response simulations (if they exist)
+# Multi-response simulations
 if (file.exists('scripts/run_multi_response_sims(curds).R')) {
   cat("Running multi-response simulations...\n")
   source('scripts/run_multi_response_sims(curds).R')
